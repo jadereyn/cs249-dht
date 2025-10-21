@@ -1,0 +1,5 @@
+Kademlia to-do:
+
+- implement Node struct and all functions including RPC calls
+- implement KBucket struct
+
