@@ -9,17 +9,13 @@ import (
 func main() {
 
 	n1, _ := NewNodeFromIPAndPort("192.0.2.10", 4001)
-	// n2, _ := NewNodeFromIPAndPort("2001:db8::1", 4001)
-	// n3, _ := NewNodeFromIPAndPort("2001:db8::1", 4002)
+	n2, _ := NewNodeFromIPAndPort("2001:db8::1", 4001)
+	n3, _ := NewNodeFromIPAndPort("2001:db8::1", 4002)
 
-	fmt.Println("Node 1 ID:", n1.HexID())
-	// fmt.Println("Node 2 ID:", n2.HexID())
-	// fmt.Println("Node 3 ID:", n3.HexID())
-
-	// fmt.Println("Distance from N1 to N2: ", NodeIDToHex(n1.GetXorDistance(&n2)))
-	// fmt.Println("Distance from N2 to N1: ", NodeIDToHex(n2.GetXorDistance(&n1)))
-	// fmt.Println("Distance from N1 to N3: ", NodeIDToHex(n1.GetXorDistance(&n3)))
-	// fmt.Println("Distance from N2 to N3: ", NodeIDToHex(n2.GetXorDistance(&n3)))
+	fmt.Println("Distance from N1 to N2: ", NodeIDToHex(n1.GetXorDistance(&n2)))
+	fmt.Println("Distance from N2 to N1: ", NodeIDToHex(n2.GetXorDistance(&n1)))
+	fmt.Println("Distance from N1 to N3: ", NodeIDToHex(n1.GetXorDistance(&n3)))
+	fmt.Println("Distance from N2 to N3: ", NodeIDToHex(n2.GetXorDistance(&n3)))
 
 	// // Create a distance queue, put the nodes in it, and
 	// // establish the distance queue (heap) invariants.
