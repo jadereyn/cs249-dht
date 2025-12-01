@@ -1,91 +1,72 @@
 package main
 
 import (
-	"crypto/sha256"
-	"encoding/binary"
-	"encoding/hex"
 	"fmt"
-	"net"
-	"strings"
-
-	"github.com/go-faster/xor"
+	//"container/heap"
+	//"flag"
 )
 
-const NODE_ID_BUFFER_SIZE int = 20 // 20 bytes in 160-bit node ID
-type NodeID [NODE_ID_BUFFER_SIZE]byte
-
 func main() {
-	x := make([]byte, NODE_ID_BUFFER_SIZE, NODE_ID_BUFFER_SIZE)
-	y := make([]byte, NODE_ID_BUFFER_SIZE, NODE_ID_BUFFER_SIZE)
 
-	// Initializing the elements
-	for i := 0; i < 10; i++ {
-		x[i] = byte(i + 1)
-		y[i] = byte(i + 1)
-	}
+	n1, _ := NewNodeFromIPAndPort("192.0.2.10", 4001)
+	// n2, _ := NewNodeFromIPAndPort("2001:db8::1", 4001)
+	// n3, _ := NewNodeFromIPAndPort("2001:db8::1", 4002)
 
-	res := xor_distance(x, y)
-	fmt.Println(res)
+	fmt.Println("Node 1 ID:", n1.HexID())
+	// fmt.Println("Node 2 ID:", n2.HexID())
+	// fmt.Println("Node 3 ID:", n3.HexID())
 
-	id1, _ := NewNodeIDFromUDP("192.0.2.10", 4001)
-	id2, _ := NewNodeIDFromUDP("2001:db8::1", 4001)
-	fmt.Println("ID1:", id1)
-	fmt.Println("ID2:", id2)
+	// fmt.Println("Distance from N1 to N2: ", NodeIDToHex(n1.GetXorDistance(&n2)))
+	// fmt.Println("Distance from N2 to N1: ", NodeIDToHex(n2.GetXorDistance(&n1)))
+	// fmt.Println("Distance from N1 to N3: ", NodeIDToHex(n1.GetXorDistance(&n3)))
+	// fmt.Println("Distance from N2 to N3: ", NodeIDToHex(n2.GetXorDistance(&n3)))
+
+	// // Create a distance queue, put the nodes in it, and
+	// // establish the distance queue (heap) invariants.
+	// nmh := make(NodeMinHeap, 2)
+
+	// nmh[0] = &NodeMinHeapItem{
+	// 	node:    n1,
+	// 	distance: n1.GetXorDistance(&n1),
+	// 	index:    0,
+	// }
+
+	// nmh[1] = &NodeMinHeapItem{
+	// 	node:    n3,
+	// 	distance: n1.GetXorDistance(&n3),
+	// 	index:    1,
+	// }
+	
+	// heap.Init(&nmh)
+
+	// // Insert a new NodeMinHeapItem and then modify its distance.
+	// nmhi := &NodeMinHeapItem{
+	// 	node:    n2,
+	// 	distance: n1.GetXorDistance(&n2),
+	// }
+	// heap.Push(&nmh, nmhi)
+
+	// // Take the NodeMinHeapItems out; they arrive in decreasing distance order.
+	// for nmh.Len() > 0 {
+	// 	nmhi := heap.Pop(&nmh).(*NodeMinHeapItem)
+	// 	fmt.Printf("Node %s disance to Node 1: %s\n", NodeIDToHex(nmhi.node.node_id), NodeIDToHex(nmhi.distance))
+	// }
+
+	// isBootstrapPtr := flag.Bool("b", false, "is boostrap node")
+	// portPtr := flag.Int("p", 8090, "port number")
+	// bootstrapIPPtr := flag.String("ba", "127.0.0.1", "bootstrap ip address")
+	// bootstrapPortPtr := flag.Int("bp", 8090, "bootstrap node port number")
+
+	// flag.Parse()
+
+	// if !*isBootstrapPtr {
+	// 	sendUDPMessage(*bootstrapIPPtr, *bootstrapPortPtr)
+	// } else {
+	// 	fmt.Println("We are a bootstrap node")
+	// }
+
+	// createUDPListener(*portPtr)
 }
 
-// assuming network byte order (big endian)
-func xor_distance(x, y []byte) []byte {
-	fmt.Println(x)
-	fmt.Println(y)
 
-	res := make([]byte, 20, 20)
-	xor.Bytes(res, x, y)
-	return res
-}
 
-// String returns the hexadecimal representation of the NodeID.
-func (n NodeID) String() string { return hex.EncodeToString(n[:]) }
-
-// Using Ip address and UDP port to generate NodeID
-func NewNodeIDFromUDP(ipStr string, port int, extra ...[]byte) (NodeID, error) {
-	var id NodeID
-
-	// Parse the IP address and Canonicalize it
-	ip := net.ParseIP(strings.TrimSpace(ipStr))
-	if ip == nil {
-		return id, fmt.Errorf("invalid IP address: %s", ipStr)
-	}
-
-	// Cannonicalize to 16 bytes. For IPv4, map to v4-in-v6
-	ip16 := ip.To16()
-	if ip16 == nil {
-		return id, fmt.Errorf("unable to convert IP to 16-byte representation: %s", ipStr)
-	}
-
-	// Address family marker : 4 or 6 (helps avoid weird collisions)
-	var af byte = 6
-	if ip.To4() != nil {
-		af = 4
-	}
-
-	// Build canonical input buffer
-	// version byte lets us change the schema later without breaking determinism
-	buf := make([]byte, 0, 1+1+16+2+64) // max extra size is 64 bytes
-	buf = append(buf, 1)                // version byte
-	buf = append(buf, af)               // address family byte (either ip4 or ip6``)
-	buf = append(buf, ip16...)          // 16 bytes for IP
-	var p [2]byte
-	binary.BigEndian.PutUint16(p[:], uint16(port))
-	buf = append(buf, p[:]...) // 2 bytes for port
-
-	// Optional extras (salt/nonce/pk hash)
-	for _, extraBytes := range extra {
-		buf = append(buf, extraBytes...)
-	}
-
-	// Hash the buffer to get NodeID
-	sum := sha256.Sum256(buf)
-	copy(id[:], sum[:NODE_ID_BUFFER_SIZE]) // take first 20 bytes
-	return id, nil
-
-}
