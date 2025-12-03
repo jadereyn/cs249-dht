@@ -1,7 +1,6 @@
 package main
 
 import (
-	"container/heap"
 	"testing"
 )
 
@@ -14,29 +13,49 @@ func TestHeap(t *testing.T) {
 
 	// Create a distance queue, put the nodes in it, and
 	// establish the distance queue (heap) invariants.
-	NewBoundedNodeHeap()
-	nmh := make(BoundedNodeHeap, 2)
 
-	nmh[0] = &NodeMinHeapItem{
-		node:     n1,
-		distance: n1.GetXorDistance(&n1),
-		index:    0,
-	}
+	// nmh := make(NodeMinHeap, 2)
+	// Change this to use NodeMinHeap type
+	// nmh := make([]*NodeMinHeapItem, 2)
 
-	nmh[1] = &NodeMinHeapItem{
-		node:     n3,
-		distance: n1.GetXorDistance(&n3),
-		index:    1,
-	}
+	// we have to have a terget
+	// Use n1 as the target for distance
+	h := NewBoundedNodeHeap(&n1, 3)
 
-	heap.Init(&nmh)
+	// Add nodes; AddNode will compute distances internally
+	h.AddNode(&n1)
+	h.AddNode(&n3)
+	h.AddNode(&n2)
+
+	// heap := &BoundedNodeHeap{
+	// 	maxSize: 3,
+	// 	data:    nmh,
+	// }
+
+	// nmh[0] = &NodeMinHeapItem{
+	// 	node:     n1,
+	// 	distance: n1.GetXorDistance(&n1),
+	// 	index:    0,
+	// }
+
+	// nmh[1] = &NodeMinHeapItem{
+	// 	node:     n3,
+	// 	distance: n1.GetXorDistance(&n3),
+	// 	index:    1,
+	// }
+
+	// heap.Init(&nmh)
+
+	// Get nodes ordered from smallest distance to largest
+	closest := h.Closest()
 
 	// Insert a new NodeMinHeapItem and then modify its distance.
-	nmhi := &NodeMinHeapItem{
-		node:     n2,
-		distance: n1.GetXorDistance(&n2),
-	}
-	heap.Push(&nmh, nmhi)
+	// nmhi := &NodeMinHeapItem{
+	// 	node:     n2,
+	// 	distance: n1.GetXorDistance(&n2),
+	// }
+	// heap.Push(&nmh, nmhi)
+	//
 
 	wanted_node := []string{
 		"48a5b8b1f726b8bdf13590d01a807ccb7809f4f616340a7f6f6625e0fd84dc90",
@@ -51,10 +70,12 @@ func TestHeap(t *testing.T) {
 	}
 
 	// Take the NodeMinHeapItems out; they arrive in decreasing distance order.
-	for i := 0; i < nmh.Len(); i++ {
-		nmhi := heap.Pop(&nmh).(*NodeMinHeapItem)
-		got_node := NodeIDToHex(nmhi.node.Node_id)
-		got_dist := NodeIDToHex(nmhi.distance)
+	for i, node := range closest {
+		// nmhi := heap.Pop(&nmh).(*NodeMinHeapItem)
+		// got_node := NodeIDToHex(nmhi.node.node_id)
+		// got_dist := NodeIDToHex(nmhi.distance)
+		got_node := NodeIDToHex(node.Node_id)
+		got_dist := NodeIDToHex(node.GetXorDistance(&n1))
 
 		if got_node != wanted_node[i] {
 			t.Errorf("got node id: %q, wanted %q", got_node, wanted_node)
