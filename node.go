@@ -4,10 +4,10 @@ import (
 	"crypto/sha256"
 	"encoding/binary"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"net"
 	"strings"
-	"errors"
 
 	//"log/slog"
 
@@ -17,12 +17,13 @@ import (
 const NODE_ID_BUFFER_SIZE int = 32 // 20 bytes in 160-bit node ID, but we are using sha-256 so change to 32 bytes
 type NodeID = []byte
 
-type Node struct {
-	
-	ip_addr string
-	port int
-	node_id NodeID
+// TODO: change NodeID to fixed size byte array like [32]byte for sha-256
+// type NodeID [NODE_ID_BUFFER_SIZE]byte
 
+type Node struct {
+	Ip_addr string
+	Port    int
+	Node_id NodeID
 }
 
 // Using Ip address and UDP port to generate new Node
@@ -68,25 +69,25 @@ func NewNodeFromIPAndPort(ipStr string, port int, extra ...[]byte) (Node, error)
 	id := make(NodeID, NODE_ID_BUFFER_SIZE, NODE_ID_BUFFER_SIZE)
 	copy(id[:], sum[:NODE_ID_BUFFER_SIZE]) // originally here to take first 20 bytes (for 160 bit IDs) but since upgrading to sha-256, using full result
 
-	return Node {ipStr, port, id}, nil
+	return Node{ipStr, port, id}, nil
 }
 
 // Return xor distance from self to n
 func (self *Node) GetXorDistance(n *Node) NodeID {
-	
+
 	res := make(NodeID, NODE_ID_BUFFER_SIZE, NODE_ID_BUFFER_SIZE)
-	xor.Bytes(res, self.node_id, n.node_id)
+	xor.Bytes(res, self.Node_id, n.Node_id)
 	return res
 }
 
 // Return the hexadecimal representation of a Node's id.
-func (self *Node) HexID() string { 
+func (self *Node) HexID() string {
 
-	return hex.EncodeToString(self.node_id[:]) 
+	return hex.EncodeToString(self.Node_id[:])
 }
 
 // Return the hexadecimal representation of a NodeID value.
-func NodeIDToHex(id NodeID) string { 
+func NodeIDToHex(id NodeID) string {
 
-	return hex.EncodeToString(id[:]) 
+	return hex.EncodeToString(id[:])
 }
