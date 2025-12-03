@@ -12,6 +12,7 @@ import (
 	//"log/slog"
 
 	"github.com/go-faster/xor"
+	"math/big"
 )
 
 const NODE_ID_BUFFER_SIZE int = 32 // 20 bytes in 160-bit node ID, but we are using sha-256 so change to 32 bytes
@@ -89,4 +90,22 @@ func (self *Node) HexID() string {
 func NodeIDToHex(id NodeID) string { 
 
 	return hex.EncodeToString(id[:]) 
+}
+
+func FindMidpoint(n1 NodeID, n2 NodeID) (NodeID, NodeID) {
+
+	i1 := new(big.Int)
+	i2 := new(big.Int)
+	res := new(big.Int)
+	resp1 := new(big.Int)
+	ba1 := i1.SetBytes(n1)
+	ba2 := i2.SetBytes(n2)
+
+	res.Add(ba1, ba2)
+
+	res.Rsh(res, 2)
+	resp1.SetInt64(1)
+	resp1.Add(res, resp1)
+
+	return NodeID(res.Bytes()), NodeID(resp1.Bytes())
 }
