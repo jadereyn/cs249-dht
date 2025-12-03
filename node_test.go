@@ -17,14 +17,14 @@ func TestNewFromIPAndPort(t *testing.T) {
 	got_a := n1.ip_addr
 	want_a := "192.0.2.10"
 
-	if got != want {
+	if got_a != want_a {
         t.Errorf("got %q, wanted %q", got_a, want_a)
     }
 
 	got_p := n1.port
 	want_p := 4001
 
-	if got != want {
+	if got_p != want_p {
         t.Errorf("got %q, wanted %q", got_p, want_p)
     }
 }
