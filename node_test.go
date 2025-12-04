@@ -4,9 +4,9 @@ import (
 	"testing"
 )
 
-func TestNewFromIPAndPort(t *testing.T) {
+func TestNewFromIPAndport(t *testing.T) {
 
-	n1, _ := NewNodeFromIPAndPort("192.0.2.10", 4001)
+	n1, _ := NewNodeFromIPAndport("192.0.2.10", 4001)
 	got := n1.HexID()
 	want := "48a5b8b1f726b8bdf13590d01a807ccb7809f4f616340a7f6f6625e0fd84dc90"
 
@@ -14,14 +14,14 @@ func TestNewFromIPAndPort(t *testing.T) {
 		t.Errorf("got %q, wanted %q", got, want)
 	}
 
-	got_a := n1.Ip_addr
+	got_a := n1.ipAddr
 	want_a := "192.0.2.10"
 
 	if got_a != want_a {
 		t.Errorf("got %q, wanted %q", got_a, want_a)
 	}
 
-	got_p := n1.Port
+	got_p := n1.port
 	want_p := 4001
 
 	if got_p != want_p {
@@ -31,7 +31,7 @@ func TestNewFromIPAndPort(t *testing.T) {
 
 func TestDistanceToSelf(t *testing.T) {
 
-	n1, _ := NewNodeFromIPAndPort("192.0.2.10", 4001)
+	n1, _ := NewNodeFromIPAndport("192.0.2.10", 4001)
 
 	got := NodeIDToHex(n1.GetXorDistance(&n1))
 	want := "0000000000000000000000000000000000000000000000000000000000000000"
@@ -43,8 +43,8 @@ func TestDistanceToSelf(t *testing.T) {
 
 func TestDistanceSymmetry(t *testing.T) {
 
-	n1, _ := NewNodeFromIPAndPort("192.0.2.10", 4001)
-	n2, _ := NewNodeFromIPAndPort("2001:db8::1", 4001)
+	n1, _ := NewNodeFromIPAndport("192.0.2.10", 4001)
+	n2, _ := NewNodeFromIPAndport("2001:db8::1", 4001)
 
 	dist_fw := NodeIDToHex(n1.GetXorDistance(&n2))
 	dist_rev := NodeIDToHex(n2.GetXorDistance(&n1))
@@ -56,9 +56,9 @@ func TestDistanceSymmetry(t *testing.T) {
 
 func TestDistanceGeneral(t *testing.T) {
 
-	n1, _ := NewNodeFromIPAndPort("192.0.2.10", 4001)
-	n2, _ := NewNodeFromIPAndPort("2001:db8::1", 4001)
-	n3, _ := NewNodeFromIPAndPort("2001:db8::1", 4002)
+	n1, _ := NewNodeFromIPAndport("192.0.2.10", 4001)
+	n2, _ := NewNodeFromIPAndport("2001:db8::1", 4001)
+	n3, _ := NewNodeFromIPAndport("2001:db8::1", 4002)
 
 	got_13 := NodeIDToHex(n1.GetXorDistance(&n3))
 	want_13 := "226896501c74a7824d1270fc91fc6ea31cd59686db54a71d34421ff5b4a1ed82"

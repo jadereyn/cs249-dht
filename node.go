@@ -11,23 +11,21 @@ import (
 
 	//"log/slog"
 
-	"github.com/go-faster/xor"
+	//"github.com/go-faster/xor"
+	"math/big"
 )
-
-const NODE_ID_BUFFER_SIZE int = 32 // 20 bytes in 160-bit node ID, but we are using sha-256 so change to 32 bytes
-type NodeID = []byte
 
 // TODO: change NodeID to fixed size byte array like [32]byte for sha-256
 // type NodeID [NODE_ID_BUFFER_SIZE]byte
 
 type Node struct {
-	Ip_addr string
-	Port    int
-	Node_id NodeID
+	ipAddr string
+	port   int
+	nodeID *big.Int
 }
 
 // Using Ip address and UDP port to generate new Node
-func NewNodeFromIPAndPort(ipStr string, port int, extra ...[]byte) (Node, error) {
+func NewNodeFromIPAndport(ipStr string, port int, extra ...[]byte) (Node, error) {
 
 	// Parse the IP address and Canonicalize it
 	ip := net.ParseIP(strings.TrimSpace(ipStr))
@@ -66,28 +64,51 @@ func NewNodeFromIPAndPort(ipStr string, port int, extra ...[]byte) (Node, error)
 
 	// Hash the buffer to get NodeID
 	sum := sha256.Sum256(buf)
-	id := make(NodeID, NODE_ID_BUFFER_SIZE, NODE_ID_BUFFER_SIZE)
-	copy(id[:], sum[:NODE_ID_BUFFER_SIZE]) // originally here to take first 20 bytes (for 160 bit IDs) but since upgrading to sha-256, using full result
+	// id := make(NodeID, NODE_ID_BUFFER_SIZE, NODE_ID_BUFFER_SIZE)
+	// copy(id[:], sum[:NODE_ID_BUFFER_SIZE]) // originally here to take first 20 bytes (for 160 bit IDs) but since upgrading to sha-256, using full result
+	id := new(big.Int).SetBytes(sum[:])
 
 	return Node{ipStr, port, id}, nil
 }
 
 // Return xor distance from self to n
-func (self *Node) GetXorDistance(n *Node) NodeID {
+func (self *Node) GetXorDistance(n *Node) *big.Int {
 
-	res := make(NodeID, NODE_ID_BUFFER_SIZE, NODE_ID_BUFFER_SIZE)
-	xor.Bytes(res, self.Node_id, n.Node_id)
+	res := new(big.Int)
+	
+	//buf := make(NodeID, NODE_ID_BUFFER_SIZE, NODE_ID_BUFFER_SIZE)
+	//xor.Bytes(buf, self.nodeID.FillBytes, n.nodeID)
+	res.Xor(self.nodeID, n.nodeID)
 	return res
 }
 
 // Return the hexadecimal representation of a Node's id.
 func (self *Node) HexID() string {
 
-	return hex.EncodeToString(self.Node_id[:])
+	return NodeIDToHex(self.nodeID)
 }
 
 // Return the hexadecimal representation of a NodeID value.
-func NodeIDToHex(id NodeID) string {
+func NodeIDToHex(id *big.Int) string {
 
-	return hex.EncodeToString(id[:])
+	res := make([]byte, NODE_ID_BUFFER_SIZE, NODE_ID_BUFFER_SIZE)
+	res = id.FillBytes(res)
+	return hex.EncodeToString(res)
+}
+
+func FindMidpoint(n1 *big.Int, n2 *big.Int) (*big.Int, *big.Int) {
+
+	res := new(big.Int)
+	resp1 := new(big.Int)
+
+	res.Add(n1, n2)
+
+	// divide by 2
+	res.Rsh(res, 2)
+
+	// get mindpoint plus 1
+	resp1.SetInt64(1)
+	resp1.Add(res, resp1)
+
+	return res, resp1
 }

@@ -2,17 +2,17 @@
 package main
 
 import (
-	"bytes"
+	//"bytes"
 	"container/heap"
 	"sort"
+	"math/big"
 )
 
 // An NodeMinHeapItem is something we manage in a distance queue.
 type NodeMinHeapItem struct {
 	node Node // Node in question
-	// TODO: change to *big.Int for arbitrary-length IDs
-	// distance *big.Int // Ordering by distance
-	distance NodeID // Ordering by distance
+
+	distance *big.Int // Ordering by distance
 	// The index is needed by update and is maintained by the heap.Interface methods.
 	index int // The index of the NodeMinHeapItem in the heap.
 }
@@ -84,7 +84,8 @@ func (h BoundedNodeHeap) Len() int {
 // We want a *max-heap* by distance, so the farthest node is at index 0.
 // bytes.Compare(a, b) > 0 means a > b.
 func (h BoundedNodeHeap) Less(i, j int) bool {
-	return bytes.Compare(h.items[i].distance, h.items[j].distance) == 1
+	//return bytes.Compare(h.items[i].distance, h.items[j].distance) == 1
+	return h.items[i].distance.Cmp(h.items[j].distance) == 1
 }
 
 // Swap is part of heap.Interface.
@@ -116,7 +117,10 @@ func (h *BoundedNodeHeap) Pop() any {
 // check for existence of a node in the heap
 func (h *BoundedNodeHeap) contains(n *Node) bool {
 	for _, it := range h.items {
-		if bytes.Equal(it.node.Node_id, n.Node_id) {
+		// if bytes.Equal(it.node.nodeID, n.nodeID) {
+		// 	return true
+		// }
+		if it.node.nodeID.Cmp(n.nodeID) == 0 {
 			return true
 		}
 	}
@@ -144,7 +148,10 @@ func (h *BoundedNodeHeap) AddNode(n *Node) {
 	worst := h.items[0]
 
 	// If the new node is farther or equal -> ignore it
-	if bytes.Compare(dist, worst.distance) >= 0 {
+	// if bytes.Compare(dist, worst.distance) >= 0 {
+	// 	return
+	// }
+	if dist.Cmp(worst.distance) >= 0 {
 		return
 	}
 
@@ -157,13 +164,13 @@ func (h *BoundedNodeHeap) AddNode(n *Node) {
 }
 
 func (h *BoundedNodeHeap) MarkContacted(n *Node) {
-	h.contacted[string(n.Node_id)] = struct{}{}
+	h.contacted[n.HexID()] = struct{}{}
 }
 
 func (h *BoundedNodeHeap) GetUncontacted() []*Node {
 	var out []*Node
 	for _, it := range h.items {
-		if _, ok := h.contacted[string(it.node.Node_id)]; !ok {
+		if _, ok := h.contacted[it.node.HexID()]; !ok {
 			out = append(out, &it.node)
 		}
 	}
@@ -179,7 +186,8 @@ func (h *BoundedNodeHeap) Closest() []*Node {
 	copy(tmp, h.items)
 
 	sort.Slice(tmp, func(i, j int) bool {
-		return bytes.Compare(tmp[i].distance, tmp[j].distance) < 0
+		//return bytes.Compare(tmp[i].distance, tmp[j].distance) < 0
+		return tmp[i].distance.Cmp(tmp[j].distance) < 0
 	})
 
 	out := make([]*Node, 0, len(tmp))

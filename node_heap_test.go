@@ -7,9 +7,9 @@ import (
 func TestHeap(t *testing.T) {
 
 	// generate the nodes
-	n1, _ := NewNodeFromIPAndPort("192.0.2.10", 4001)
-	n2, _ := NewNodeFromIPAndPort("2001:db8::1", 4001)
-	n3, _ := NewNodeFromIPAndPort("2001:db8::1", 4002)
+	n1, _ := NewNodeFromIPAndport("192.0.2.10", 4001)
+	n2, _ := NewNodeFromIPAndport("2001:db8::1", 4001)
+	n3, _ := NewNodeFromIPAndport("2001:db8::1", 4002)
 
 	// Create a distance queue, put the nodes in it, and
 	// establish the distance queue (heap) invariants.
@@ -72,9 +72,9 @@ func TestHeap(t *testing.T) {
 	// Take the NodeMinHeapItems out; they arrive in decreasing distance order.
 	for i, node := range closest {
 		// nmhi := heap.Pop(&nmh).(*NodeMinHeapItem)
-		// got_node := NodeIDToHex(nmhi.node.node_id)
+		// got_node := NodeIDToHex(nmhi.node.nodeID)
 		// got_dist := NodeIDToHex(nmhi.distance)
-		got_node := NodeIDToHex(node.Node_id)
+		got_node := NodeIDToHex(node.nodeID)
 		got_dist := NodeIDToHex(node.GetXorDistance(&n1))
 
 		if got_node != wanted_node[i] {
