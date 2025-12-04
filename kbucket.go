@@ -8,6 +8,7 @@ import (
 	"strings"
 	//"bytes"
 	"math/big"
+	//"fmt"
 )
 
 type KBucket struct {
@@ -71,6 +72,10 @@ func (self *KBucket) GetNodes() []Node {
 	return omap.IteratorValuesToSlice(self.nodelist.Iterator())
 }
 
+func (self *KBucket) GetReplacementNodes() []Node {
+	return omap.IteratorValuesToSlice(self.replacement_nodelist.Iterator())
+}
+
 func (self *KBucket) AddNode(n Node) bool {
 	_, found := self.nodelist.Get(n.HexID())
 	if found {
@@ -109,9 +114,16 @@ func (self *KBucket) RemoveNode(n Node) {
 
 		if self.replacement_nodelist.Len() > 0 {
 			// get newest seen (last added)
-			newest_seen := omap.IteratorKeysToSlice(self.replacement_nodelist.Iterator())[self.replacement_nodelist.Len()-1]
+			newest_seen_id := omap.IteratorKeysToSlice(self.replacement_nodelist.Iterator())[self.replacement_nodelist.Len()-1]
 			// add to node list
-			self.nodelist.Put(newest_seen, n)
+			newest_seen_node, _ := self.replacement_nodelist.Get(newest_seen_id)
+			//fmt.Println("newest_seen_id: ", newest_seen_id)
+			//fmt.Println("node gotten: ", newest_seen_node.HexID())
+
+			self.nodelist.Put(newest_seen_id, newest_seen_node)
+
+			// remove newest seen replacement node from replacement node list
+			self.replacement_nodelist.Delete(newest_seen_id)
 		}
 	}
 }

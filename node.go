@@ -104,6 +104,15 @@ func NewNodeFromIPAndport(ipStr string, port int, extra ...[]byte) (Node, error)
 	return Node{ipStr, port, id}, nil
 }
 
+// for testing purposes only
+func NewNodeFromInt(i int64) (Node) {
+
+	id_int := big.NewInt(i)
+
+	// we don't really care about ip address and port for testing
+	return Node {"", 0, id_int}
+}
+
 // Return xor distance from self to n
 func (self *Node) GetXorDistance(n *Node) *big.Int {
 
@@ -137,7 +146,7 @@ func FindMidpoint(n1 *big.Int, n2 *big.Int) (*big.Int, *big.Int) {
 	res.Add(n1, n2)
 
 	// divide by 2
-	res.Rsh(res, 2)
+	res.Rsh(res, 1)
 
 	// get mindpoint plus 1
 	resp1.SetInt64(1)
