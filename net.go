@@ -39,7 +39,7 @@ func sendUDPMessage(addr string, port int) {
 }
 
 func sendUDPResponse(conn *net.UDPConn, addr *net.UDPAddr) {
-	s := fmt.Sprintf("I am sending %s:%d a response over UDP", addr.IP.String(), addr.Port)
+	s := fmt.Sprintf("I am sending %s:%d a response over UDP", addr.IP.String(), addr.port)
 	_, err := conn.WriteToUDP([]byte(s), addr)
 	if err != nil {
 		fmt.Printf("Error sending message %v", err)
@@ -50,7 +50,7 @@ func createUDPListener(port int) {
 	p := make([]byte, 2048)
 
 	addr := net.UDPAddr{
-		Port: port,
+		port: port,
 		IP:   net.ParseIP("127.0.0.1"),
 	}
 

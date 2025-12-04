@@ -15,20 +15,19 @@ import (
 	"math/big"
 )
 
-const NODE_ID_BUFFER_SIZE int = 32 // 20 bytes in 160-bit node ID, but we are using sha-256 so change to 32 bytes
 type NodeID = []byte
 
 // TODO: change NodeID to fixed size byte array like [32]byte for sha-256
 // type NodeID [NODE_ID_BUFFER_SIZE]byte
 
 type Node struct {
-	Ip_addr string
-	Port    int
-	Node_id NodeID
+	ipAddr string
+	port    int
+	nodeID NodeID
 }
 
 // Using Ip address and UDP port to generate new Node
-func NewNodeFromIPAndPort(ipStr string, port int, extra ...[]byte) (Node, error) {
+func NewNodeFromIPAndport(ipStr string, port int, extra ...[]byte) (Node, error) {
 
 	// Parse the IP address and Canonicalize it
 	ip := net.ParseIP(strings.TrimSpace(ipStr))
@@ -77,14 +76,14 @@ func NewNodeFromIPAndPort(ipStr string, port int, extra ...[]byte) (Node, error)
 func (self *Node) GetXorDistance(n *Node) NodeID {
 
 	res := make(NodeID, NODE_ID_BUFFER_SIZE, NODE_ID_BUFFER_SIZE)
-	xor.Bytes(res, self.Node_id, n.Node_id)
+	xor.Bytes(res, self.nodeID, n.nodeID)
 	return res
 }
 
 // Return the hexadecimal representation of a Node's id.
 func (self *Node) HexID() string {
 
-	return hex.EncodeToString(self.Node_id[:])
+	return hex.EncodeToString(self.nodeID[:])
 }
 
 // Return the hexadecimal representation of a NodeID value.

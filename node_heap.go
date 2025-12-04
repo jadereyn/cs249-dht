@@ -116,7 +116,7 @@ func (h *BoundedNodeHeap) Pop() any {
 // check for existence of a node in the heap
 func (h *BoundedNodeHeap) contains(n *Node) bool {
 	for _, it := range h.items {
-		if bytes.Equal(it.node.Node_id, n.Node_id) {
+		if bytes.Equal(it.node.nodeID, n.nodeID) {
 			return true
 		}
 	}
@@ -157,13 +157,13 @@ func (h *BoundedNodeHeap) AddNode(n *Node) {
 }
 
 func (h *BoundedNodeHeap) MarkContacted(n *Node) {
-	h.contacted[string(n.Node_id)] = struct{}{}
+	h.contacted[string(n.nodeID)] = struct{}{}
 }
 
 func (h *BoundedNodeHeap) GetUncontacted() []*Node {
 	var out []*Node
 	for _, it := range h.items {
-		if _, ok := h.contacted[string(it.node.Node_id)]; !ok {
+		if _, ok := h.contacted[string(it.node.nodeID)]; !ok {
 			out = append(out, &it.node)
 		}
 	}

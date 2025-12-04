@@ -46,7 +46,7 @@ func (self *KBucket) Split() (KBucket, KBucket) {
 	
 	// transfer nodes by id here to each bucket
 	for it := self.nodelist.Iterator(); it.Next(); {
-		if first.HasInRange(it.Value().node_id) {
+		if first.HasInRange(it.Value().nodeID) {
 			first.nodelist.Put(it.Key(), it.Value())
 		} else {
 			second.nodelist.Put(it.Key(), it.Value())
@@ -55,7 +55,7 @@ func (self *KBucket) Split() (KBucket, KBucket) {
 	}
 
 	for it := self.replacement_nodelist.Iterator(); it.Next(); {
-		if first.HasInRange(it.Value().node_id) {
+		if first.HasInRange(it.Value().nodeID) {
 			first.nodelist.Put(it.Key(), it.Value())
 		} else {
 			second.nodelist.Put(it.Key(), it.Value())
@@ -116,18 +116,18 @@ func (self *KBucket) RemoveNode(n Node) {
 	}
 }
 
-func (self *KBucket) GetNode(node_id string) (Node) {
-	node, _ := self.nodelist.Get(node_id)
+func (self *KBucket) GetNode(nodeID string) (Node) {
+	node, _ := self.nodelist.Get(nodeID)
 	return node
 }
 
-func (self *KBucket) IsNewNode(node_id string) bool {
-	_, found := self.nodelist.Get(node_id)
+func (self *KBucket) IsNewNode(nodeID string) bool {
+	_, found := self.nodelist.Get(nodeID)
 	return !found
 }
 
-func (self *KBucket) HasInRange(node_id NodeID) bool {
-	return bytes.Compare(node_id, self.range_lower) > -1 && bytes.Compare(self.range_upper, node_id) > -1
+func (self *KBucket) HasInRange(nodeID NodeID) bool {
+	return bytes.Compare(nodeID, self.range_lower) > -1 && bytes.Compare(self.range_upper, nodeID) > -1
 }
 
 // TODO double check this is actually the oldest seen
@@ -141,8 +141,8 @@ func (self *KBucket) Len() int {
 }
 
 func (self *KBucket) Depth() int {
-	node_ids := omap.IteratorKeysToSlice(self.nodelist.Iterator())
-	sp := SharedPrefix(node_ids)
+	nodeIDs := omap.IteratorKeysToSlice(self.nodelist.Iterator())
+	sp := SharedPrefix(nodeIDs)
 	return len(sp)
 }
 
