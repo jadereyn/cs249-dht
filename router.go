@@ -4,12 +4,13 @@ import (
 	"slices"
 	"math/big"
 	"time"
+	"fmt"
 )
 
 type Router struct {
 	node Node
 	// protocol Protocol
-	buckets []KBucket
+	buckets []*KBucket
 }
 
 func NewRouter(node Node) (Router) {
@@ -20,6 +21,8 @@ func NewRouter(node Node) (Router) {
 	}
 	router.FlushCache()
 
+	fmt.Println("buckets: ", router.buckets)
+
 	return router
 }
 
@@ -28,22 +31,21 @@ func (self *Router) FlushCache() {
 	upper := big.NewInt(1)
 	upper.Lsh(upper, NODE_ID_BIT_SIZE)
 	all_encompassing_bucket := NewKBucket(lower, upper)
-	self.buckets = make([]KBucket, 1, 1)
-	self.buckets = append(self.buckets, all_encompassing_bucket)
+	self.buckets = append(self.buckets, &all_encompassing_bucket)
 }
 
 func (self *Router) SplitBucket(index int) {
 	first, second := self.buckets[index].Split()
-	self.buckets[index] = first
-	slices.Insert(self.buckets, index, second)
+	self.buckets[index] = &first
+	slices.Insert(self.buckets, index, &second)
 }
 
-func (self *Router) LonelyBuckets() []KBucket {
+func (self *Router) LonelyBuckets() []*KBucket {
 	now := time.Now()
 	// find buckets which haven't been updated since an hour
 	hourago := now.Add(time.Hour * -1)
 
-	lonelyBuckets := make([]KBucket, 0, 1)
+	lonelyBuckets := make([]*KBucket, 0, 1)
 
 	for _, bucket := range self.buckets {
 		if bucket.last_updated.Before(hourago) {
@@ -127,8 +129,8 @@ func (self *Router) FindNeighbors(n Node, alpha int) []*Node {
 type Traversal struct {
 	index int
 	currentNodes []Node
-	leftBuckets []KBucket
-	rightBuckets []KBucket
+	leftBuckets []*KBucket
+	rightBuckets []*KBucket
 	curr_index int
 	left_index int
 	right_index int
@@ -159,18 +161,20 @@ func NewTraversal(router *Router, startNode Node) Traversal {
 func (self *Traversal) Next() (Node, bool) {
 	if self.curr_index >= 0 {
 		res := self.currentNodes[self.curr_index]
-		self.curr_index -= 1
+		self.curr_index--
 		return res, false
 	}
 
 	if self.isLeft && self.left_index >= 0 {
 		self.currentNodes = self.leftBuckets[self.left_index].GetNodes()
+		self.left_index--
 		self.isLeft = false
 		return self.Next()
 	}
 
 	if self.right_index < len(self.rightBuckets) {
-		self.currentNodes = self.leftBuckets[self.left_index].GetNodes()
+		self.currentNodes = self.rightBuckets[self.right_index].GetNodes()
+		self.right_index++
 		self.isLeft = true
 		return self.Next()
 	}
