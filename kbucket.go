@@ -6,19 +6,20 @@ import (
 	"time"
 	//"slices"
 	"strings"
-	"bytes"
+	//"bytes"
+	"math/big"
 )
 
 type KBucket struct {
-	range_lower NodeID
-	range_upper NodeID
+	range_lower *big.Int
+	range_upper *big.Int
 	nodelist omap.OMap[string, Node]
 	last_updated time.Time
 	replacement_nodelist omap.OMap[string, Node]
 	max_replacment_nodes int
 }
 
-func NewKBucket(range_lower NodeID, range_upper NodeID) (KBucket) {
+func NewKBucket(range_lower *big.Int, range_upper *big.Int) (KBucket) {
 
 	// make node lists
 	_nodelist := omap.New[string, Node]()
@@ -126,8 +127,9 @@ func (self *KBucket) IsNewNode(nodeID string) bool {
 	return !found
 }
 
-func (self *KBucket) HasInRange(nodeID NodeID) bool {
-	return bytes.Compare(nodeID, self.range_lower) > -1 && bytes.Compare(self.range_upper, nodeID) > -1
+func (self *KBucket) HasInRange(nodeID *big.Int) bool {
+	//return bytes.Compare(nodeID, self.range_lower) > -1 && bytes.Compare(self.range_upper, nodeID) > -1
+	return nodeID.Cmp(self.range_lower) > -1 && self.range_upper.Cmp(nodeID) > -1
 }
 
 // TODO double check this is actually the oldest seen

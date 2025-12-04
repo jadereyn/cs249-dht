@@ -11,19 +11,17 @@ import (
 
 	//"log/slog"
 
-	"github.com/go-faster/xor"
+	//"github.com/go-faster/xor"
 	"math/big"
 )
-
-type NodeID = []byte
 
 // TODO: change NodeID to fixed size byte array like [32]byte for sha-256
 // type NodeID [NODE_ID_BUFFER_SIZE]byte
 
 type Node struct {
 	ipAddr string
-	port    int
-	nodeID NodeID
+	port   int
+	nodeID *big.Int
 }
 
 // Using Ip address and UDP port to generate new Node
@@ -66,46 +64,51 @@ func NewNodeFromIPAndport(ipStr string, port int, extra ...[]byte) (Node, error)
 
 	// Hash the buffer to get NodeID
 	sum := sha256.Sum256(buf)
-	id := make(NodeID, NODE_ID_BUFFER_SIZE, NODE_ID_BUFFER_SIZE)
-	copy(id[:], sum[:NODE_ID_BUFFER_SIZE]) // originally here to take first 20 bytes (for 160 bit IDs) but since upgrading to sha-256, using full result
+	// id := make(NodeID, NODE_ID_BUFFER_SIZE, NODE_ID_BUFFER_SIZE)
+	// copy(id[:], sum[:NODE_ID_BUFFER_SIZE]) // originally here to take first 20 bytes (for 160 bit IDs) but since upgrading to sha-256, using full result
+	id := new(big.Int).SetBytes(sum[:])
 
 	return Node{ipStr, port, id}, nil
 }
 
 // Return xor distance from self to n
-func (self *Node) GetXorDistance(n *Node) NodeID {
+func (self *Node) GetXorDistance(n *Node) *big.Int {
 
-	res := make(NodeID, NODE_ID_BUFFER_SIZE, NODE_ID_BUFFER_SIZE)
-	xor.Bytes(res, self.nodeID, n.nodeID)
+	res := new(big.Int)
+	
+	//buf := make(NodeID, NODE_ID_BUFFER_SIZE, NODE_ID_BUFFER_SIZE)
+	//xor.Bytes(buf, self.nodeID.FillBytes, n.nodeID)
+	res.Xor(self.nodeID, n.nodeID)
 	return res
 }
 
 // Return the hexadecimal representation of a Node's id.
 func (self *Node) HexID() string {
 
-	return hex.EncodeToString(self.nodeID[:])
+	return NodeIDToHex(self.nodeID)
 }
 
 // Return the hexadecimal representation of a NodeID value.
-func NodeIDToHex(id NodeID) string {
+func NodeIDToHex(id *big.Int) string {
 
-	return hex.EncodeToString(id[:]) 
+	res := make([]byte, NODE_ID_BUFFER_SIZE, NODE_ID_BUFFER_SIZE)
+	res = id.FillBytes(res)
+	return hex.EncodeToString(res)
 }
 
-func FindMidpoint(n1 NodeID, n2 NodeID) (NodeID, NodeID) {
+func FindMidpoint(n1 *big.Int, n2 *big.Int) (*big.Int, *big.Int) {
 
-	i1 := new(big.Int)
-	i2 := new(big.Int)
 	res := new(big.Int)
 	resp1 := new(big.Int)
-	ba1 := i1.SetBytes(n1)
-	ba2 := i2.SetBytes(n2)
 
-	res.Add(ba1, ba2)
+	res.Add(n1, n2)
 
+	// divide by 2
 	res.Rsh(res, 2)
+
+	// get mindpoint plus 1
 	resp1.SetInt64(1)
 	resp1.Add(res, resp1)
 
-	return NodeID(res.Bytes()), NodeID(resp1.Bytes())
+	return res, resp1
 }
