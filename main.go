@@ -3,22 +3,31 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 )
 
 func main() {
 
-	isBootstrapPtr := flag.Bool("b", false, "is boostrap node")
-	portPtr := flag.Int("p", 8090, "port number")
-	bootstrapIPPtr := flag.String("ba", "127.0.0.1", "bootstrap ip address")
-	bootstrapportPtr := flag.Int("bp", 8090, "bootstrap node port number")
+	isBootstrap := flag.Bool("b", false, "is boostrap node")
+	port := flag.Int("p", 8090, "port number")
+	bootstrapIP := flag.String("ba", "127.0.0.1", "bootstrap ip address")
+	bootstrapPort := flag.Int("bp", 8090, "bootstrap node port number")
 
 	flag.Parse()
 
-	if !*isBootstrapPtr {
-		sendUDPMessage(*bootstrapIPPtr, *bootstrapportPtr)
-	} else {
-		fmt.Println("We are a bootstrap node")
+	ln, err := NewLocalNode("127.0.0.1", *port)
+	if err != nil {
+		log.Fatalf("Error creating LocalNode: %v", err)
 	}
 
-	createUDPListener(*portPtr)
+	if !*isBootstrap {
+		fmt.Printf("Starting JOINING node on port %d\n", *port)
+		ln.PingBootstrap(*bootstrapIP, *bootstrapPort)
+	} else {
+		fmt.Printf("Starting BOOTSTRAP node on port %d\n", *port)
+	}
+
+	// Block forever handling RPCs
+	ln.Run()
+
 }

@@ -1,26 +1,45 @@
 package main
 
-import (
-	//"fmt"
-	//"encoding/json"
-)
+//"fmt"
+//"encoding/json"
 
 type RPCDescriptor int
 
 const (
-    RPCPing RPCDescriptor = iota
-    RPCFindNode
-    RPCStore
-    RPCFindValue
+	RPCPing RPCDescriptor = iota
+	RPCPong
+	RPCFindNode
+	RPCStore
+	RPCFindValue
 )
 
-var stateName = map[RPCDescriptor]string {
-    RPCPing:      "Ping",
-    RPCFindNode: "Find Node",
-    RPCStore:     "Store",
-    RPCFindValue:  "Find Value",
+var stateName = map[RPCDescriptor]string{
+	RPCPing:      "Ping",
+	RPCPong:      "Pong",
+	RPCFindNode:  "Find Node",
+	RPCStore:     "Store",
+	RPCFindValue: "Find Value",
 }
 
+// Node info that we send over the wire (simplified)
+type RPCNodeInfo struct {
+	ID   string `json:"id"`
+	IP   string `json:"ip"`
+	Port int    `json:"port"`
+}
+
+// RPCMessage is what we send over the wire as JSON.
 type RPCMessage struct {
-	descriptor RPCDescriptor
+	Type     RPCDescriptor `json:"type"`
+	FromID   string        `json:"from_id"` // hex node id, or dummy for now
+	FromIP   string        `json:"from_ip"`
+	FromPort int           `json:"from_port"`
+
+	// For FIND_NODE / FIND_VALUE
+	TargetID string        `json:"target_id,omitempty"`
+	Nodes    []RPCNodeInfo `json:"nodes,omitempty"`
+
+	// For STORE / FIND_VALUE
+	Key   string `json:"key,omitempty"`
+	Value []byte `json:"value,omitempty"`
 }

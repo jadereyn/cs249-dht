@@ -11,28 +11,27 @@ import (
 )
 
 type KBucket struct {
-	range_lower *big.Int
-	range_upper *big.Int
-	nodelist omap.OMap[string, Node]
-	last_updated time.Time
+	range_lower          *big.Int
+	range_upper          *big.Int
+	nodelist             omap.OMap[string, Node]
+	last_updated         time.Time
 	replacement_nodelist omap.OMap[string, Node]
 	max_replacment_nodes int
 }
 
-func NewKBucket(range_lower *big.Int, range_upper *big.Int) (KBucket) {
+func NewKBucket(range_lower *big.Int, range_upper *big.Int) KBucket {
 
 	// make node lists
 	_nodelist := omap.New[string, Node]()
 	_replacement_nodelist := omap.New[string, Node]()
 
-	return KBucket {
+	return KBucket{
 		range_lower,
 		range_upper,
 		_nodelist,
 		time.Now(),
 		_replacement_nodelist,
 		KSIZE * REPLACEMENT_FACTOR,
-
 	}
 }
 
@@ -44,7 +43,7 @@ func (self *KBucket) Split() (KBucket, KBucket) {
 	midp, mplusone := FindMidpoint(self.range_lower, self.range_upper)
 	first := NewKBucket(self.range_lower, midp)
 	second := NewKBucket(mplusone, self.range_upper)
-	
+
 	// transfer nodes by id here to each bucket
 	for it := self.nodelist.Iterator(); it.Next(); {
 		if first.HasInRange(it.Value().nodeID) {
@@ -52,7 +51,7 @@ func (self *KBucket) Split() (KBucket, KBucket) {
 		} else {
 			second.nodelist.Put(it.Key(), it.Value())
 		}
-		
+
 	}
 
 	for it := self.replacement_nodelist.Iterator(); it.Next(); {
@@ -61,18 +60,18 @@ func (self *KBucket) Split() (KBucket, KBucket) {
 		} else {
 			second.nodelist.Put(it.Key(), it.Value())
 		}
-		
+
 	}
 
 	return first, second
 
 }
 
-func (self *KBucket) GetNodes() ([]Node) {
+func (self *KBucket) GetNodes() []Node {
 	return omap.IteratorValuesToSlice(self.nodelist.Iterator())
 }
 
-func (self *KBucket) AddNode(n Node) (bool) {
+func (self *KBucket) AddNode(n Node) bool {
 	_, found := self.nodelist.Get(n.HexID())
 	if found {
 		// delete the node and re-add if it exists, to preserve the order of last seen
@@ -94,7 +93,7 @@ func (self *KBucket) AddNode(n Node) (bool) {
 
 		return false
 	}
-	
+
 	return true
 }
 
@@ -110,14 +109,14 @@ func (self *KBucket) RemoveNode(n Node) {
 
 		if self.replacement_nodelist.Len() > 0 {
 			// get newest seen (last added)
-			newest_seen := omap.IteratorKeysToSlice(self.replacement_nodelist.Iterator())[self.replacement_nodelist.Len() - 1]
+			newest_seen := omap.IteratorKeysToSlice(self.replacement_nodelist.Iterator())[self.replacement_nodelist.Len()-1]
 			// add to node list
 			self.nodelist.Put(newest_seen, n)
 		}
 	}
 }
 
-func (self *KBucket) GetNode(nodeID string) (Node) {
+func (self *KBucket) GetNode(nodeID string) Node {
 	node, _ := self.nodelist.Get(nodeID)
 	return node
 }
@@ -133,7 +132,7 @@ func (self *KBucket) HasInRange(nodeID *big.Int) bool {
 }
 
 // TODO double check this is actually the oldest seen
-func (self *KBucket) Head() (Node) {
+func (self *KBucket) Head() Node {
 	head := omap.IteratorValuesToSlice(self.nodelist.Iterator())[0]
 	return head
 }
@@ -150,8 +149,8 @@ func (self *KBucket) Depth() int {
 
 func SharedPrefix(strs []string) string {
 	if len(strs) == 0 {
-        return ""
-    }
+		return ""
+	}
 
 	prefix := strs[0]
 
