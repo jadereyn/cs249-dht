@@ -56,6 +56,32 @@ func (t *UDPTransport) Listen(handler func(data []byte, from *net.UDPAddr)) {
 	}
 }
 
+// ListenRPC reads JSON-encoded RPCMessages off the UDP socket and
+// passes them to a handler.
+func (t *UDPTransport) ListenRPC(handler func(msg *RPCMessage, from *net.UDPAddr)) {
+	buf := make([]byte, 2048)
+
+	fmt.Printf("Starting UDP RPC listener on %s:%d...\n",
+		t.addr.IP.String(), t.addr.Port)
+
+	for {
+		n, remoteAddr, err := t.conn.ReadFromUDP(buf)
+		if err != nil {
+			fmt.Printf("Error reading UDP packet: %v\n", err)
+			continue
+		}
+
+		var msg RPCMessage
+		if err := json.Unmarshal(buf[:n], &msg); err != nil {
+			fmt.Printf("Error unmarshaling RPCMessage: %v\n", err)
+			continue
+		}
+
+		// Hand off to higher-level handler (Node logic)
+		handler(&msg, remoteAddr)
+	}
+}
+
 // SendRPC sends an RPCMessage as JSON to addr:port and waits for a single response.
 func (t *UDPTransport) SendRPC(addr string, port int, msg *RPCMessage, timeout time.Duration) (*RPCMessage, error) {
 	remoteStr := fmt.Sprintf("%s:%d", addr, port)
