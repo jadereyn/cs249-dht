@@ -1,12 +1,2 @@
-github.com/amjadjibon/itertools v1.0.0 h1:O7rLgdIM1kIu252DR0IL2w5tE5oPc7xm+c1aO1X3pns=
-github.com/amjadjibon/itertools v1.0.0/go.mod h1:TdQQBkpyRlbajBEB8u5t5Qf8UeL1Ok2o+fnvV2X8Sp4=
-github.com/go-faster/xor v1.0.0 h1:2o8vTOgErSGHP3/7XwA5ib1FTtUsNtwCoLLBjl31X38=
-github.com/go-faster/xor v1.0.0/go.mod h1:x5CaDY9UKErKzqfRfFZdfu+OSTfoZny3w5Ak7UxcipQ=
 github.com/matheusoliveira/go-ordered-map v0.2.0 h1:sZrRbKFm2ua0F/WelkdxaCsAi9KlPy7514X/Ga5+Srk=
 github.com/matheusoliveira/go-ordered-map v0.2.0/go.mod h1:cUEgFKuM3PhY1/kNtWI3qRGj/DRTSylD3lhMIpntf/g=
-github.com/smallnest/exp v0.7.1 h1:G/Nj88eZKA9vJ5nbuG4HGG4PTCsU3Qei0CqgVxXvNxw=
-github.com/smallnest/exp v0.7.1/go.mod h1:F4J3h2w+OvhqY1YY+wBb57w0yCoy34Mbhkjbo21AlWU=
-github.com/tunabay/go-bitarray v1.3.1 h1:5q38uagXhrdzT0LjKWBB5ILO56fptGrJG8750171cAo=
-github.com/tunabay/go-bitarray v1.3.1/go.mod h1:k6MncM9mWklQRcVy5Xe9RYixeDd9b3H0xqtgiANJFF4=
-golang.org/x/exp v0.0.0-20250911091902-df9299821621 h1:2id6c1/gto0kaHYyrixvknJ8tUK/Qs5IsmBtrc+FtgU=
-golang.org/x/exp v0.0.0-20250911091902-df9299821621/go.mod h1:TwQYMMnGpvZyc+JpB/UAuTNIsVJifOlSkrZkhcvpVUk=

@@ -75,7 +75,7 @@ func NewNodeFromIPAndport(ipStr string, port int, extra ...[]byte) (Node, error)
 func (self *Node) GetXorDistance(n *Node) *big.Int {
 
 	res := new(big.Int)
-	
+
 	//buf := make(NodeID, NODE_ID_BUFFER_SIZE, NODE_ID_BUFFER_SIZE)
 	//xor.Bytes(buf, self.nodeID.FillBytes, n.nodeID)
 	res.Xor(self.nodeID, n.nodeID)
