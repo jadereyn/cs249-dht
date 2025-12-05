@@ -78,13 +78,12 @@ func (ln *Server) HandleRPC(msg *RPCMessage, from *net.UDPAddr) {
 	case RPCFindNode:
 		fmt.Printf("LocalNode %s got FIND_NODE (not implemented yet)\n",
 			ln.Self.HexID())
-		// TODO: use routing table to reply with closest nodes
 		ln.handleFindNodeRPC(msg, from)
 
 	case RPCStore:
 		fmt.Printf("LocalNode %s got STORE key=%q\n",
 			ln.Self.HexID(), msg.Key)
-		// TODO: store key/value
+
 		if msg.Key == "" {
 			fmt.Println("STORE with empty key, ignoring")
 			return
@@ -272,99 +271,6 @@ func (ln *Server) FindNodeOnce(targetID *big.Int, ip string, port int) ([]Node, 
 	return neighbors, nil
 }
 
-// LookupNodes performs a Kademlia-style iterative lookup for nodes
-// close to targetID, and returns up to KSIZE closest nodes it finds.
-func (ln *Server) LookupNodes(targetID *big.Int) ([]Node, error) {
-	// 1. Start from our own routing table
-	targetNode := Node{
-		ipAddr: "",
-		port:   0,
-		nodeID: targetID,
-	}
-
-	initial := ln.Router.FindNeighbors(targetNode, KSIZE)
-	if len(initial) == 0 {
-		return nil, fmt.Errorf("no known nodes in routing table")
-	}
-
-	// 2. Create a bounded heap keyed by distance to target
-	heap := NewBoundedNodeHeap(&targetNode, KSIZE)
-	for _, n := range initial {
-		if n == nil || n.nodeID == nil {
-			continue
-		}
-		heap.AddNode(n)
-	}
-
-	// Track which nodes we've already queried
-	tried := make(map[string]bool)
-
-	for {
-		// 3. Get uncontacted nodes, closest first
-		uncontacted := heap.GetUncontacted()
-		if len(uncontacted) == 0 {
-			break
-		}
-
-		// Take up to ALPHA at a time
-		batch := uncontacted
-		if len(batch) > ALPHA {
-			batch = batch[:ALPHA]
-		}
-
-		progress := false
-
-		for _, n := range batch {
-			if n == nil || n.nodeID == nil {
-				continue
-			}
-			idHex := n.HexID()
-			if tried[idHex] {
-				continue
-			}
-			tried[idHex] = true
-			heap.MarkContacted(n)
-
-			// 4. Ask this node for neighbors of targetID
-			newNodes, err := ln.FindNodeOnce(targetID, n.ipAddr, n.port)
-			if err != nil {
-				// errors are common (timeouts, offline nodes), just skip
-				continue
-			}
-
-			// 5. Merge newly discovered nodes
-			for _, nn := range newNodes {
-				// Make sure we don't freak out if nodeID is nil
-				if nn.nodeID == nil {
-					continue
-				}
-				heap.AddNode(&nn)
-				ln.Router.AddContact(nn)
-			}
-
-			if len(newNodes) > 0 {
-				progress = true
-			}
-		}
-
-		// 6. If none of the batch gave us new nodes, we converged
-		if !progress {
-			break
-		}
-	}
-
-	// 7. Return the K closest nodes from heap
-	closestPtrs := heap.Closest() // []*Node
-	out := make([]Node, 0, len(closestPtrs))
-	for _, p := range closestPtrs {
-		if p != nil && p.nodeID != nil {
-			out = append(out, *p)
-		}
-	}
-	return out, nil
-}
-
-// TODO : we might not need them if we use our own struct for storage
 // StoreLocal stores a key-value pair in the local node's storage.
 func (ln *Server) StoreLocal(key string, value []byte) {
 	ln.Store[key] = value
