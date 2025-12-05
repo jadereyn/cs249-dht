@@ -1,7 +1,6 @@
 package main
 
 import (
-	"slices"
 	"math/big"
 	"time"
 )
@@ -12,11 +11,10 @@ type Router struct {
 	buckets []KBucket
 }
 
-func NewRouter(node Node) (Router) {
-
-	router := Router {
-		node,
-		nil,
+func NewRouter(node Node) Router {
+	router := Router{
+		node:    node,
+		buckets: nil,
 	}
 	router.FlushCache()
 
@@ -27,15 +25,20 @@ func (self *Router) FlushCache() {
 	lower := big.NewInt(0)
 	upper := big.NewInt(1)
 	upper.Lsh(upper, NODE_ID_BIT_SIZE)
-	all_encompassing_bucket := NewKBucket(lower, upper)
-	self.buckets = make([]KBucket, 1, 1)
-	self.buckets = append(self.buckets, all_encompassing_bucket)
+
+	all := NewKBucket(lower, upper)
+	self.buckets = make([]KBucket, 0, 1)
+	self.buckets = append(self.buckets, all)
 }
 
 func (self *Router) SplitBucket(index int) {
 	first, second := self.buckets[index].Split()
 	self.buckets[index] = first
-	slices.Insert(self.buckets, index, second)
+
+	oldLen := len(self.buckets)
+	self.buckets = append(self.buckets, KBucket{})
+	copy(self.buckets[index+2:], self.buckets[index+1:oldLen])
+	self.buckets[index+1] = second
 }
 
 func (self *Router) LonelyBuckets() []KBucket {
@@ -56,17 +59,26 @@ func (self *Router) LonelyBuckets() []KBucket {
 
 func (self *Router) IsNewNode(n Node) bool {
 	index := self.GetBucketFor(n)
+	if index == -1 {
+		return true
+	}
 	return self.buckets[index].IsNewNode(n.HexID())
 }
 
 func (self *Router) RemoveContact(n Node) {
 	index := self.GetBucketFor(n)
+	if index == -1 {
+		return
+	}
 	self.buckets[index].RemoveNode(n)
 }
 
 func (self *Router) AddContact(n Node) {
 	index := self.GetBucketFor(n)
-	bucket := self.buckets[index]
+	if index == -1 {
+		return
+	}
+	bucket := &self.buckets[index]
 
 	if bucket.AddNode(n) {
 		return
@@ -76,7 +88,7 @@ func (self *Router) AddContact(n Node) {
 	// split the bucket if it has the router node in its range
 	// or if its depth is not congruent to 0, mod BSIZE
 
-	if bucket.HasInRange(self.node.nodeID) || bucket.Depth() % BSIZE != 0 {
+	if bucket.HasInRange(self.node.nodeID) || bucket.Depth()%BSIZE != 0 {
 		self.SplitBucket(index)
 		self.AddContact(n)
 	} else {
@@ -86,7 +98,7 @@ func (self *Router) AddContact(n Node) {
 
 func (self *Router) GetBucketFor(n Node) int {
 	for index, bucket := range self.buckets {
-		if n.nodeID.Cmp(bucket.range_upper) == -1 {
+		if bucket.HasInRange(n.nodeID) {
 			return index
 		}
 	}
@@ -95,9 +107,8 @@ func (self *Router) GetBucketFor(n Node) int {
 }
 
 func (self *Router) FindNeighbors(n Node, alpha int) []*Node {
-	
 	heapsize := alpha
-	if alpha == -1 {
+	if alpha == -1 || alpha <= 0 {
 		heapsize = KSIZE
 	}
 
@@ -105,75 +116,79 @@ func (self *Router) FindNeighbors(n Node, alpha int) []*Node {
 
 	traverser := NewTraversal(self, n)
 
-	neighbor, isComplete := traverser.Next()
-
-	for !isComplete {
-		
-		if neighbor.HexID() != n.HexID() {
-			nodes.Push(neighbor)
-		}
-
-		if nodes.Len() == heapsize {
+	for {
+		neighbor, done := traverser.Next()
+		if done {
 			break
 		}
 
-		neighbor, isComplete = traverser.Next()
+		if neighbor.nodeID == nil || neighbor.HexID() == n.HexID() {
+			continue
+		}
+
+		nodes.AddNode(&neighbor)
+		if nodes.Len() == heapsize {
+			break
+		}
 	}
 
 	return nodes.Closest()
 }
 
-
 type Traversal struct {
-	index int
 	currentNodes []Node
-	leftBuckets []KBucket
+	leftBuckets  []KBucket
 	rightBuckets []KBucket
-	curr_index int
-	left_index int
-	right_index int
-	isLeft bool
+	currIndex    int
+	leftIndex    int
+	rightIndex   int
+	isLeft       bool
 }
 
-func NewTraversal(router *Router, startNode Node) Traversal {
+func NewTraversal(router *Router, startNode Node) *Traversal {
 	index := router.GetBucketFor(startNode)
 	router.buckets[index].RefreshLastUpdated()
 	currentNodes := router.buckets[index].GetNodes()
 	leftBuckets := router.buckets[:index]
 	rightBuckets := router.buckets[index+1:]
 
-	t := Traversal {
-		index,
-		currentNodes,
-		leftBuckets,
-		rightBuckets,
-		len(currentNodes) - 1,
-		len(leftBuckets) - 1, // start at last left bucket
-		0, // start at first right bucket
-		true,
+	t := &Traversal{
+		currentNodes: currentNodes,
+		leftBuckets:  leftBuckets,
+		rightBuckets: rightBuckets,
+		currIndex:    len(currentNodes) - 1,
+		leftIndex:    len(leftBuckets) - 1, // start at last left bucket
+		rightIndex:   0,                    // start at first right bucket
+		isLeft:       true,
 	}
 
 	return t
 }
 
 func (self *Traversal) Next() (Node, bool) {
-	if self.curr_index >= 0 {
-		res := self.currentNodes[self.curr_index]
-		self.curr_index -= 1
-		return res, false
-	}
+	for {
+		if self.currIndex >= 0 {
+			res := self.currentNodes[self.currIndex]
+			self.currIndex--
+			return res, false
+		}
 
-	if self.isLeft && self.left_index >= 0 {
-		self.currentNodes = self.leftBuckets[self.left_index].GetNodes()
-		self.isLeft = false
-		return self.Next()
-	}
+		if self.isLeft && self.leftIndex >= 0 {
+			self.currentNodes = self.leftBuckets[self.leftIndex].GetNodes()
+			self.currIndex = len(self.currentNodes) - 1
+			self.leftIndex--
+			self.isLeft = false
+			continue
+		}
 
-	if self.right_index < len(self.rightBuckets) {
-		self.currentNodes = self.leftBuckets[self.left_index].GetNodes()
-		self.isLeft = true
-		return self.Next()
-	}
+		if self.rightIndex < len(self.rightBuckets) {
+			self.currentNodes = self.rightBuckets[self.rightIndex].GetNodes()
+			self.currIndex = len(self.currentNodes) - 1
+			self.rightIndex++
+			self.isLeft = true
+			continue
+		}
 
-	return Node{"nil", 0, nil}, true
+		return Node{}, true
+	}
 }
