@@ -15,19 +15,19 @@ func main() {
 
 	flag.Parse()
 
-	ln, err := NewLocalNode("127.0.0.1", *port)
+	server, err := NewServer("127.0.0.1", *port)
 	if err != nil {
 		log.Fatalf("Error creating LocalNode: %v", err)
 	}
 
 	if !*isBootstrap {
 		fmt.Printf("Starting JOINING node on port %d\n", *port)
-		ln.PingBootstrap(*bootstrapIP, *bootstrapPort)
+		server.PingBootstrap(*bootstrapIP, *bootstrapPort)
 	} else {
 		fmt.Printf("Starting BOOTSTRAP node on port %d\n", *port)
 	}
 
 	// Block forever handling RPCs
-	ln.Run()
+	server.Run()
 
 }
