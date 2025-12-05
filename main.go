@@ -30,6 +30,17 @@ func main() {
 			len(server.Router.buckets),
 			server.Router.buckets[0].Len(),
 		)
+		bootstrap_node := server.Router.buckets[0].GetNodes()[0]
+		fmt.Printf("Running LookupNodes for bootstrap node...")
+			nodes, err := server.LookupNodes(bootstrap_node.nodeID)
+			if err != nil {
+				fmt.Printf("LookupNodes for bootstrap error: %v\n", err)
+			} else {
+				fmt.Println("LookupNodes for bootstrap returned:")
+				for _, n := range nodes {
+					fmt.Printf("- %s:%d id=%s\n", n.ipAddr, n.port, n.HexID())
+				}
+			}
 
 		// targetID := ln.Self.nodeID // e.g. lookup our own ID as a test
 		// nodes, err := ln.LookupNodes(targetID)

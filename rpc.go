@@ -9,16 +9,20 @@ const (
 	RPCPing RPCDescriptor = iota
 	RPCPong
 	RPCFindNode
+	RPCFindNodeResp
 	RPCStore
 	RPCFindValue
+	RPCFindValueResp
 )
 
 var stateName = map[RPCDescriptor]string{
 	RPCPing:      "Ping",
 	RPCPong:      "Pong",
 	RPCFindNode:  "Find Node",
+	RPCFindNodeResp:  "Find Node Response",
 	RPCStore:     "Store",
 	RPCFindValue: "Find Value",
+	RPCFindValueResp: "Find Value Response",
 }
 
 // Node info that we send over the wire (simplified)

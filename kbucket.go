@@ -8,7 +8,7 @@ import (
 	"strings"
 	//"bytes"
 	"math/big"
-	//"fmt"
+	"fmt"
 )
 
 type KBucket struct {
@@ -83,6 +83,7 @@ func (self *KBucket) AddNode(n Node) bool {
 		self.nodelist.Delete(n.HexID())
 		self.nodelist.Put(n.HexID(), n)
 	} else if self.Len() < KSIZE {
+		//fmt.Println("bucket not yet full, ", n.HexID())
 		self.nodelist.Put(n.HexID(), n)
 	} else {
 		_, found = self.replacement_nodelist.Get(n.HexID())
@@ -95,6 +96,8 @@ func (self *KBucket) AddNode(n Node) bool {
 			oldest_seen := omap.IteratorKeysToSlice(self.replacement_nodelist.Iterator())[0]
 			self.replacement_nodelist.Delete(oldest_seen)
 		}
+
+		fmt.Println("bucket full, should return false, ", n.HexID())
 
 		return false
 	}

@@ -5,6 +5,7 @@ import (
 	"math/big"
 	"slices"
 	"time"
+	
 )
 
 type Router struct {
@@ -36,7 +37,7 @@ func (self *Router) FlushCache() {
 func (self *Router) SplitBucket(index int) {
 	first, second := self.buckets[index].Split()
 	self.buckets[index] = &first
-	slices.Insert(self.buckets, index, &second)
+	self.buckets = slices.Insert(self.buckets, index, &second)
 }
 
 func (self *Router) LonelyBuckets() []*KBucket {
@@ -79,6 +80,7 @@ func (self *Router) AddContact(n Node) {
 	bucket := self.buckets[index]
 
 	if bucket.AddNode(n) {
+		fmt.Println("router: added contact successfully: ", n.HexID())
 		return
 	}
 
@@ -86,6 +88,7 @@ func (self *Router) AddContact(n Node) {
 	// split the bucket if it has the router node in its range
 	// or if its depth is not congruent to 0, mod BSIZE
 
+	fmt.Println("adding contact did not succeed - bucket full, splitting")
 	if bucket.HasInRange(self.node.nodeID) || bucket.Depth()%BSIZE != 0 {
 		self.SplitBucket(index)
 		self.AddContact(n)
@@ -173,6 +176,7 @@ func (self *Traversal) Next() (Node, bool) {
 	if self.isLeft && self.left_index >= 0 {
 		self.currentNodes = self.leftBuckets[self.left_index].GetNodes()
 		self.left_index--
+		self.curr_index = len(self.currentNodes) - 1
 		self.isLeft = false
 		return self.Next()
 	}
@@ -180,6 +184,7 @@ func (self *Traversal) Next() (Node, bool) {
 	if self.right_index < len(self.rightBuckets) {
 		self.currentNodes = self.rightBuckets[self.right_index].GetNodes()
 		self.right_index++
+		self.curr_index = len(self.currentNodes) - 1
 		self.isLeft = true
 		return self.Next()
 	}

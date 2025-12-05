@@ -76,7 +76,7 @@ func (ln *Server) HandleRPC(msg *RPCMessage, from *net.UDPAddr) {
 			ln.Self.HexID(), msg.FromIP, msg.FromPort, msg.FromID)
 
 	case RPCFindNode:
-		fmt.Printf("LocalNode %s got FIND_NODE (not implemented yet)\n",
+		fmt.Printf("LocalNode %s got FIND_NODE\n",
 			ln.Self.HexID())
 		ln.handleFindNodeRPC(msg, from)
 
@@ -161,7 +161,6 @@ func (ln *Server) PingBootstrap(bootstrapIP string, bootstrapPort int) {
 		return
 	}
 	ln.Router.AddContact(*bootstrapNode)
-
 }
 
 // Convert our internal Node to wire format
@@ -282,6 +281,8 @@ func (ln *Server) LookupNodes(targetID *big.Int) ([]Node, error) {
 		nodeID: targetID,
 	}
 
+	fmt.Println("server: starting lookup of node ", targetNode.HexID())
+
 	initial := ln.Router.FindNeighbors(targetNode, KSIZE)
 	if len(initial) == 0 {
 		return nil, fmt.Errorf("no known nodes in routing table")
@@ -299,7 +300,10 @@ func (ln *Server) LookupNodes(targetID *big.Int) ([]Node, error) {
 	// Track which nodes we've already queried
 	tried := make(map[string]bool)
 
+	fmt.Println("tried: ", len(tried))
+
 	for {
+		fmt.Println("getting uncontacted nodes...")
 		// 3. Get uncontacted nodes, closest first
 		uncontacted := heap.GetUncontacted()
 		if len(uncontacted) == 0 {
@@ -331,6 +335,8 @@ func (ln *Server) LookupNodes(targetID *big.Int) ([]Node, error) {
 				// errors are common (timeouts, offline nodes), just skip
 				continue
 			}
+
+			fmt.Println("new nodes len: ", len(newNodes))
 
 			// 5. Merge newly discovered nodes
 			for _, nn := range newNodes {
@@ -436,9 +442,9 @@ func (ln *Server) StoreValue(key string, value []byte) error {
 	keyHash := sha256.Sum256([]byte(key))
 	keyID := new(big.Int).SetBytes(keyHash[:])
 
-	// Ask our own router for KSIZE closest nodes
+	// Ask our own router for STOR_REPLICATION closest nodes
 	targetNode := Node{nodeID: keyID}
-	neighbors := ln.Router.FindNeighbors(targetNode, KSIZE)
+	neighbors := ln.Router.FindNeighbors(targetNode, STOR_REPLICATION)
 	if len(neighbors) == 0 {
 		return fmt.Errorf("StoreValue: no known nodes to store to")
 	}
