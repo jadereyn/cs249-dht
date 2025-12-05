@@ -3,23 +3,31 @@ package main
 import (
 	"testing"
 	"math/big"
+	"fmt"
 )
 
 func TestRouter(t *testing.T) {
+	fmt.Println("testing router #######3")
 	our_node := NewNodeFromInt(1)
 	router := NewRouter(our_node)
 
 	contact := NewNodeFromInt(2)
 	router.AddContact(contact)
 
-	if len(router.buckets) != 1 {
-		t.Errorf("got %q, wanted %q", len(router.buckets), 1)
+	contact = NewNodeFromInt(3)
+	router.AddContact(contact)
+
+	contact = NewNodeFromInt(4)
+	router.AddContact(contact)
+
+	if len(router.buckets) != 2 {
+		t.Errorf("got %q, wanted %q", len(router.buckets), 2)
 	}
 
-	fb := router.buckets[0]
+	fb := router.buckets[1]
 
-	if len(fb.GetNodes()) != 1 {
-		t.Errorf("got %q, wanted %q", len(fb.GetNodes()), 1)
+	if len(fb.GetNodes()) != 3 {
+		t.Errorf("got %q, wanted %q", len(fb.GetNodes()), 3)
 	}
 }
 

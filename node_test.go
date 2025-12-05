@@ -2,6 +2,7 @@ package main
 
 import (
 	"testing"
+	"time"
 )
 
 func TestNewFromIPAndport(t *testing.T) {
@@ -74,4 +75,9 @@ func TestDistanceGeneral(t *testing.T) {
 		t.Errorf("got %q, wanted %q", got_23, want_23)
 	}
 
+}
+
+// small helper so we don't repeat sleep logic
+func waitForRouting() {
+	time.Sleep(300 * time.Millisecond)
 }
