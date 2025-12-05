@@ -18,17 +18,17 @@ func main() {
 
 	flag.Parse()
 
-	ln, err := NewLocalNode("127.0.0.1", *port)
+	server, err := NewServer("127.0.0.1", *port)
 	if err != nil {
 		log.Fatalf("Error creating LocalNode: %v", err)
 	}
 
 	if !*isBootstrap {
 		fmt.Printf("Starting JOINING node on port %d\n", *port)
-		ln.PingBootstrap(*bootstrapIP, *bootstrapPort)
+		server.PingBootstrap(*bootstrapIP, *bootstrapPort)
 		fmt.Printf("After PingBootstrap, router has %d buckets, bucket[0] size=%d\n",
-			len(ln.Router.buckets),
-			ln.Router.buckets[0].Len(),
+			len(server.Router.buckets),
+			server.Router.buckets[0].Len(),
 		)
 
 		// targetID := ln.Self.nodeID // e.g. lookup our own ID as a test
@@ -42,7 +42,7 @@ func main() {
 			}
 
 			fmt.Printf("Running LookupNodes for targetID=%s...\n", *lookupTargetHex)
-			nodes, err := ln.LookupNodes(targetID)
+			nodes, err := server.LookupNodes(targetID)
 			if err != nil {
 				fmt.Printf("LookupNodes error: %v\n", err)
 			} else {
@@ -57,6 +57,6 @@ func main() {
 	}
 
 	// Block forever handling RPCs
-	ln.Run()
+	server.Run()
 
 }

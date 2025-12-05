@@ -1,14 +1,16 @@
 package main
 
 import (
+	"fmt"
 	"math/big"
+	"slices"
 	"time"
 )
 
 type Router struct {
 	node Node
 	// protocol Protocol
-	buckets []KBucket
+	buckets []*KBucket
 }
 
 func NewRouter(node Node) Router {
@@ -18,6 +20,8 @@ func NewRouter(node Node) Router {
 	}
 	router.FlushCache()
 
+	fmt.Println("buckets: ", router.buckets)
+
 	return router
 }
 
@@ -25,28 +29,22 @@ func (self *Router) FlushCache() {
 	lower := big.NewInt(0)
 	upper := big.NewInt(1)
 	upper.Lsh(upper, NODE_ID_BIT_SIZE)
-
-	all := NewKBucket(lower, upper)
-	self.buckets = make([]KBucket, 0, 1)
-	self.buckets = append(self.buckets, all)
+	all_encompassing_bucket := NewKBucket(lower, upper)
+	self.buckets = append(self.buckets, &all_encompassing_bucket)
 }
 
 func (self *Router) SplitBucket(index int) {
 	first, second := self.buckets[index].Split()
-	self.buckets[index] = first
-
-	oldLen := len(self.buckets)
-	self.buckets = append(self.buckets, KBucket{})
-	copy(self.buckets[index+2:], self.buckets[index+1:oldLen])
-	self.buckets[index+1] = second
+	self.buckets[index] = &first
+	slices.Insert(self.buckets, index, &second)
 }
 
-func (self *Router) LonelyBuckets() []KBucket {
+func (self *Router) LonelyBuckets() []*KBucket {
 	now := time.Now()
 	// find buckets which haven't been updated since an hour
 	hourago := now.Add(time.Hour * -1)
 
-	lonelyBuckets := make([]KBucket, 0, 1)
+	lonelyBuckets := make([]*KBucket, 0, 1)
 
 	for _, bucket := range self.buckets {
 		if bucket.last_updated.Before(hourago) {
@@ -78,7 +76,7 @@ func (self *Router) AddContact(n Node) {
 	if index == -1 {
 		return
 	}
-	bucket := &self.buckets[index]
+	bucket := self.buckets[index]
 
 	if bucket.AddNode(n) {
 		return
@@ -137,11 +135,11 @@ func (self *Router) FindNeighbors(n Node, alpha int) []*Node {
 
 type Traversal struct {
 	currentNodes []Node
-	leftBuckets  []KBucket
-	rightBuckets []KBucket
-	currIndex    int
-	leftIndex    int
-	rightIndex   int
+	leftBuckets  []*KBucket
+	rightBuckets []*KBucket
+	curr_index   int
+	left_index   int
+	right_index  int
 	isLeft       bool
 }
 
@@ -156,9 +154,9 @@ func NewTraversal(router *Router, startNode Node) *Traversal {
 		currentNodes: currentNodes,
 		leftBuckets:  leftBuckets,
 		rightBuckets: rightBuckets,
-		currIndex:    len(currentNodes) - 1,
-		leftIndex:    len(leftBuckets) - 1, // start at last left bucket
-		rightIndex:   0,                    // start at first right bucket
+		curr_index:   len(currentNodes) - 1,
+		left_index:   len(leftBuckets) - 1, // start at last left bucket
+		right_index:  0,                    // start at first right bucket
 		isLeft:       true,
 	}
 
@@ -166,29 +164,26 @@ func NewTraversal(router *Router, startNode Node) *Traversal {
 }
 
 func (self *Traversal) Next() (Node, bool) {
-	for {
-		if self.currIndex >= 0 {
-			res := self.currentNodes[self.currIndex]
-			self.currIndex--
-			return res, false
-		}
-
-		if self.isLeft && self.leftIndex >= 0 {
-			self.currentNodes = self.leftBuckets[self.leftIndex].GetNodes()
-			self.currIndex = len(self.currentNodes) - 1
-			self.leftIndex--
-			self.isLeft = false
-			continue
-		}
-
-		if self.rightIndex < len(self.rightBuckets) {
-			self.currentNodes = self.rightBuckets[self.rightIndex].GetNodes()
-			self.currIndex = len(self.currentNodes) - 1
-			self.rightIndex++
-			self.isLeft = true
-			continue
-		}
-
-		return Node{}, true
+	if self.curr_index >= 0 {
+		res := self.currentNodes[self.curr_index]
+		self.curr_index--
+		return res, false
 	}
+
+	if self.isLeft && self.left_index >= 0 {
+		self.currentNodes = self.leftBuckets[self.left_index].GetNodes()
+		self.left_index--
+		self.isLeft = false
+		return self.Next()
+	}
+
+	if self.right_index < len(self.rightBuckets) {
+		self.currentNodes = self.rightBuckets[self.right_index].GetNodes()
+		self.right_index++
+		self.isLeft = true
+		return self.Next()
+	}
+
+	return Node{}, true
+
 }
